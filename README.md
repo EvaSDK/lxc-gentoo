@@ -18,6 +18,12 @@ Requirements
  - lxc userspace utilities
     (Gentoo: 'emerge lxc')
 
+November 2012 Updates
+---------------------
+ - Fix download of amd64 autobuilds.
+ - Add lxc-gentoo-simple to create simple network-less
+   hosts from lxc-create. Leaves details to admin and
+   its tool.
 
 October 2012 Updates
 --------------------
