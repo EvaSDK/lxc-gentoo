@@ -190,7 +190,7 @@ download_gentoo() {
 		_download_file "${url}" "portage-latest.tar.bz2"
 
 		# make sure we are operating on a clear rootfs cache
-		mkdir -p "${template}" #> /dev/null 2>&1
+		mkdir -p "${template}"
 
 		_extract_file "stage3-${ARCH}-${url_latest_path}" "${template}" &&
 		_extract_file "portage-latest.tar.bz2" "${template}/usr" &&
