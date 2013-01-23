@@ -35,7 +35,7 @@ else
 	ARCH=${ARCH:-x86}
 	SUBARCH=${SUBARCH:-$(uname -m)}
 fi
-ARCH_VARIANT=""
+ARCHVARIANT=""
 
 
 configure_gentoo() {
@@ -161,18 +161,18 @@ download_gentoo() {
 		mkdir -p "${CACHE}" > /dev/null 2>&1
 	fi
 
-	template="${CACHE}/${ARCH}_${SUBARCH}_${ARCH_VARIANT}_rootfs"
+	template="${CACHE}/${ARCH}_${SUBARCH}_${ARCHVARIANT}_rootfs"
 	echo -n "Checking for pre-existing cache in ${template}... "
 
 	# FIXME: add a cache expiration verification
 	if [ ! -e "${template}" ]; then
 		echo "not found."
 
-		# prepend '-' to nonblank ARCH_VARIANT for URL construction
-		if [ ! -z "${ARCH_VARIANT}" ]; then
-			variant="-${ARCH_VARIANT}"
+		# prepend '-' to nonblank ARCHVARIANT for URL construction
+		if [ ! -z "${ARCHVARIANT}" ]; then
+			variant="-${ARCHVARIANT}"
 		else
-			variant="${ARCH_VARIANT}"
+			variant="${ARCHVARIANT}"
 		fi
 
 		# get latest-stage3.txt file for subpath
@@ -208,7 +208,7 @@ download_gentoo() {
 
 copy_gentoo() {
 	local template
-	template="${CACHE}/${ARCH}_${SUBARCH}_${ARCH_VARIANT}_rootfs"
+	template="${CACHE}/${ARCH}_${SUBARCH}_${ARCHVARIANT}_rootfs"
 
 	(
 			flock -n -x 200
@@ -371,7 +371,7 @@ do
 		-n|--name)      NAME=$2; shift 2;;
 		-c|--clean)     clean=$2; shift 2;;
 		--arch)         ARCH=$2; shift 2;;
-		--arch-variant) ARCH_VARIANT=$2; shift 2;;
+		--arch-variant) ARCHVARIANT=$2; shift 2;;
 		--subarch)      SUBARCH=$2; shift 2;;
 		--)             shift 1; break ;;
 		*)              break ;;
