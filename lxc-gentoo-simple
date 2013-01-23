@@ -35,7 +35,7 @@ else
 	ARCH=${ARCH:-x86}
 	SUBARCH=${SUBARCH:-$(uname -m)}
 fi
-ARCHVARIANT=""
+ARCHVARIANT="${ARCHVARIANT:-}"
 
 
 configure_gentoo() {
