@@ -115,6 +115,10 @@ configure_gentoo() {
 	chroot "${ROOTFS}" rc-update del netmount default
 	# XXX: termencoding, fix for error caused by openrc <0.10.2 (~may 2012)
 	chroot "${ROOTFS}" rc-update del termencoding default
+	# XXX: remove net.lo from boot runlevel (~jan 2013; openrc-0.11.8)
+	chroot "${ROOTFS}" rc-update del net.lo default
+	# force local provision of 'net' (~jan 2013)
+	echo 'rc_provide="net"' >> "${ROOTFS}"/etc/rc.conf
 
 	# set root password
 	echo "root:root-too-simple" | chroot "${ROOTFS}" chpasswd
