@@ -36,6 +36,7 @@ else
 	SUBARCH=${SUBARCH:-$(uname -m)}
 fi
 ARCHVARIANT="${ARCHVARIANT:-}"
+MIRROR="${MIRROR:-http://distfiles.gentoo.org}"
 
 
 configure_gentoo() {
@@ -181,7 +182,7 @@ download_gentoo() {
 
 		# get latest-stage3.txt file for subpath
 		echo -n "Determining path to latest ${DISTRO} ${ARCH}${variant} stage3 archive... "
-		url="http://distfiles.gentoo.org/releases/${ARCH}/autobuilds"
+		url="${MIRROR}/releases/${ARCH}/autobuilds"
 		url_latest="${url}/latest-stage3-${SUBARCH}${variant}.txt"
 		url_latest_path=$(${WGET} -q -O - "${url_latest}"|tail -n 1)
 		echo "${url_latest_path}"
@@ -190,7 +191,7 @@ download_gentoo() {
 		url="${url}/${url_latest_path}"
 		_download_file "${url}" "stage3-${ARCH}-${url_latest_path}"
 
-		url="http://distfiles.gentoo.org/snapshots/portage-latest.tar.bz2"
+		url="${MIRROR}/snapshots/portage-latest.tar.bz2"
 		_download_file "${url}" "portage-latest.tar.bz2"
 
 		# make sure we are operating on a clear rootfs cache
@@ -360,7 +361,7 @@ usage()
 	return 0
 }
 
-options=$(getopt -o hp:n:c -l help,path:,name:,clean,arch:,arch-variant:,subarch: -- "$@")
+options=$(getopt -o hp:n:c -l help,path:,name:,clean,arch:,arch-variant:,subarch:,mirror: -- "$@")
 if [ $? -ne 0 ]; then
 	usage $(basename $0)
 	exit 1
@@ -377,6 +378,7 @@ do
 		--arch)         ARCH=$2; shift 2;;
 		--arch-variant) ARCHVARIANT=$2; shift 2;;
 		--subarch)      SUBARCH=$2; shift 2;;
+		--mirror)       MIRROR=$2; shift 2;;
 		--)             shift 1; break ;;
 		*)              break ;;
 	esac
