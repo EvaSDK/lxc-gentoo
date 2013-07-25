@@ -43,12 +43,11 @@ WGET="wget --timeout=8 --read-timeout=15 -c -t10 -nd"
 # Default configuration value (changed by option parsing)
 if [ "$(uname -m)" == "x86_64" ]; then
 	ARCH=${ARCH:-amd64}
-	SUBARCH=${SUBARCH:-amd64}
+	ARCHVARIANT=${ARCH}
 else
 	ARCH=${ARCH:-x86}
-	SUBARCH=${SUBARCH:-$(uname -m)}
+	ARCHVARIANT="i686"
 fi
-ARCHVARIANT="${ARCHVARIANT:-}"
 MIRROR="${MIRROR:-http://distfiles.gentoo.org}"
 SKIP_PORTAGE="no"
 
@@ -183,24 +182,17 @@ download_gentoo() {
 		mkdir -p "${CACHE}" > /dev/null 2>&1
 	fi
 
-	template="${CACHE}/${ARCH}_${SUBARCH}_${ARCHVARIANT}_rootfs"
+	template="${CACHE}/${ARCH}_${ARCHVARIANT}_rootfs"
 	echo -n "Checking for pre-existing cache in ${template}... "
 
 	# FIXME: add a cache expiration verification
 	if [ ! -e "${template}" ]; then
 		echo "not found."
 
-		# prepend '-' to nonblank ARCHVARIANT for URL construction
-		if [ ! -z "${ARCHVARIANT}" ]; then
-			variant="-${ARCHVARIANT}"
-		else
-			variant="${ARCHVARIANT}"
-		fi
-
 		# get latest-stage3.txt file for subpath
-		echo -n "Determining path to latest ${DISTRO} ${ARCH}${variant} stage3 archive... "
+		echo -n "Determining path to latest ${DISTRO} ${ARCH}${ARCHVARIANT} stage3 archive... "
 		url="${MIRROR}/releases/${ARCH}/autobuilds"
-		url_latest="${url}/latest-stage3-${SUBARCH}${variant}.txt"
+		url_latest="${url}/latest-stage3-${ARCHVARIANT}.txt"
 		url_latest_path=$(${WGET} -q -O - "${url_latest}"|tail -n 1)
 		echo "${url_latest_path}"
 
@@ -231,7 +223,7 @@ download_gentoo() {
 copy_gentoo() {
 	local template
 	local options
-	template="${CACHE}/${ARCH}_${SUBARCH}_${ARCHVARIANT}_rootfs"
+	template="${CACHE}/${ARCH}_${ARCHVARIANT}_rootfs"
 	options=""
 
 	# make a local copy of the minimal system
@@ -403,7 +395,7 @@ EOF
 	return 0
 }
 
-options=$(getopt -o hp:n:c -l help,path:,name:,clean,arch:,arch-variant:,subarch:,mirror:,skip-portage -- "$@")
+options=$(getopt -o hp:n:c -l help,path:,name:,clean,arch:,arch-variant:,mirror:,skip-portage -- "$@")
 if [ $? -ne 0 ]; then
 	usage $(basename $0)
 	exit 1
@@ -419,7 +411,6 @@ do
 		-p|--path)      path=$2; shift 2;;
 		--arch)         ARCH=$2; shift 2;;
 		--arch-variant) ARCHVARIANT=$2; shift 2;;
-		--subarch)      SUBARCH=$2; shift 2;;
 		--mirror)       MIRROR=$2; shift 2;;
 		--skip-portage) SKIP_PORTAGE="yes" ; shift 2;;
 		--)             shift 1; break ;;
