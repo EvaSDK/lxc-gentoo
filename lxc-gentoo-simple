@@ -140,6 +140,9 @@ configure_gentoo() {
 	# XXX: fix boot-time errors on openrc 0.12.4 related to lo interface being
 	# already set up by the host system on our behalf (~jan 2014)
 	chroot "${ROOTFS}" rc-update del loopback boot
+	# XXX: fix boot-time errors on openrc 0.12.4 related to kernel modules
+	# (~may 2014)
+	chroot "${ROOTFS}" rc-update del kmod-static-nodes sysinit
 	# force local provision of 'net' (~jan 2013)
 	echo 'rc_provide="net"' >> "${ROOTFS}"/etc/rc.conf
 
