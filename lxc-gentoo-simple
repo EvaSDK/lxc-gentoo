@@ -70,14 +70,6 @@ configure_gentoo() {
 	# clean container shutdown on SIGPWR
 	pf:12345:powerwait:/sbin/halt
 	EOF
-	# we also blank out /etc/issue here in order to prevent delays spawning
-	# login caused by attempts to determine domainname on disconnected
-	# containers
-	cat <<- EOF > "${ROOTFS}"/etc/issue
-
-	This is LXC host \n (\s \m \r) \t
-
-	EOF
 
 	# quiet login
 	touch "${ROOTFS}"/root/.hushlogin
