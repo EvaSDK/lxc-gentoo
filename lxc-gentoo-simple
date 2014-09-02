@@ -114,9 +114,8 @@ configure_gentoo() {
 		-i "${ROOTFS}"/etc/rc.conf
 
 	# XXX: Add missing -lxc keyword to some services for stable openrc
-	# XXX: urandom, from boot runlevel (openrc<0.11 leaves it in ~sep 2012)
 	local service
-	for service in dmesg mount-ro sysctl urandom ; do
+	for service in dmesg mount-ro sysctl ; do
 		sed -e 's/^(\s*keyword .*)$/$1 -lxc/' \
 			-i "${ROOTFS}"/etc/init.d/${service}
 	done
