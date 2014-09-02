@@ -108,11 +108,6 @@ configure_gentoo() {
 	chroot "${ROOTFS}" eselect locale set en_US.utf8
 
 	# configure init
-	# XXX: fix boot-time interface config wipe under aggressive cap drop
-	# (openrc 0.9.8.4 ~sep 2012 - https://bugs.gentoo.org/show_bug.cgi?id=436266)
-	sed -e 's/^#rc_nostop=""/rc_nostop="net.eth0 net.lo"/' \
-		-i "${ROOTFS}"/etc/rc.conf
-
 	# XXX: Add missing -lxc keyword to some services for stable openrc
 	local service
 	for service in dmesg mount-ro sysctl ; do
