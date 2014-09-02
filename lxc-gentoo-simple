@@ -71,9 +71,6 @@ configure_gentoo() {
 	pf:12345:powerwait:/sbin/halt
 	EOF
 
-	# quiet login
-	touch "${ROOTFS}"/root/.hushlogin
-
 	# clean up default fstab
 	cat <<- EOF > "${ROOTFS}"/etc/fstab
 	# required to prevent boot-time error display
