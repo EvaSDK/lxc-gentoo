@@ -110,8 +110,7 @@ configure_gentoo() {
 	# configure init
 	# XXX: fix boot-time interface config wipe under aggressive cap drop
 	# (openrc 0.9.8.4 ~sep 2012 - https://bugs.gentoo.org/show_bug.cgi?id=436266)
-	sed -e 's/^#rc_sys=""/rc_sys="lxc"/g' \
-		-e 's/^#rc_nostop=""/rc_nostop="net.eth0 net.lo"/' \
+	sed -e 's/^#rc_nostop=""/rc_nostop="net.eth0 net.lo"/' \
 		-i "${ROOTFS}"/etc/rc.conf
 
 	# XXX: Add missing -lxc keyword to some services for stable openrc
