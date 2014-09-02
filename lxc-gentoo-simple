@@ -115,18 +115,15 @@ configure_gentoo() {
 		-i "${ROOTFS}"/etc/rc.conf
 
 	# XXX: Add missing -lxc keyword to some services for stable openrc
-	# XXX: termencoding, fix for error caused by openrc <0.10.2 (~may 2012)
 	# XXX: urandom, from boot runlevel (openrc<0.11 leaves it in ~sep 2012)
 	local service
-	for service in dmesg mount-ro sysctl termencoding urandom ; do
+	for service in dmesg mount-ro sysctl urandom ; do
 		sed -e 's/^(\s*keyword .*)$/$1 -lxc/' \
 			-i "${ROOTFS}"/etc/init.d/${service}
 	done
 
 	# adjust default services
 	chroot "${ROOTFS}" rc-update del netmount default
-	# XXX: termencoding, fix for error caused by openrc <0.10.2 (~may 2012)
-	chroot "${ROOTFS}" rc-update del termencoding default
 	# XXX: remove net.lo from boot runlevel (~jan 2013; openrc-0.11.8)
 	chroot "${ROOTFS}" rc-update del net.lo default
 	# XXX: fix boot-time errors on openrc 0.12.4 related to mount permissions
