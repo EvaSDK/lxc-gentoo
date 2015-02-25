@@ -15,13 +15,26 @@ as hardware detection and kernel bootstrapping
 is not required, the init process is largely 
 IO bound.
 
+
+Security Notes
+--------------
+ - Don't treat guests as root safe
+ - Best practice is to be paranoid:
+     - Drop most capabilities
+     - Give each guest a dedicated filesystem (eg. separate LVM2 logical block device, ZFS dataset, or loopback-mounted file)
+     - Do not use UIDs on the guest that intsersect with the host system
+ - Make sure you never both (1) mount ```proc``` in a guest that you don't trust, and (2) have ```CONFIG_MAGIC_SYSRQ``` 'Magic SysRq Key' enabled in your kernel (which creates ```/proc/sysrq-trigger```) ... as this can be abused for denial of service
+ - If you use DHCP be sure to use the default busybox DHCP daemon as your client (to avoid the bash shellshock issues)
+
+
 Requirements
 ------------
  - Recent Linux kernel (>=3.2.x recommended, >=3.7.x actively tested)
     http://www.kernel.org/ (Gentoo: `emerge hardened-sources` / `emerge gentoo-sources` / `emerge vanilla-sources`)
-     - Relevant kernel options enabled (try `lxc-checkconfig` or review the documentation at http://en.gentoo-wiki.com/wiki/LXC)
+     - Relevant kernel options enabled (try `lxc-checkconfig` or review the documentation at http://wiki.gentoo.org/wiki/Lxc)
  - Recent lxc userspace utilities
     (Gentoo: `emerge lxc`)
+
 
 Usage
 -----
@@ -49,7 +62,30 @@ Available environment variables are as follows.
    <td><b>Cache Path</b></td>
    <td><pre>$CACHE</pre></td>
    <td><i>/var/cache/lxc/gentoo</i></td>
-   <td>Stores arch/subarch/variant combo specific stage3 tarballs + extracted root filesystem images, plus the latest portage snapshot.</td>
+   <td>Stores arch/subarch/variant combo specific stage3 tarballs and the portage snapshot.</td>
+  </tr>
+  <tr>
+   <td><b>Mirror</b></td>
+   <td><pre>$MIRROR</pre></td>
+   <td><i>http://distfiles.gentoo.org</i>
+   <td>Specifies the location from which the stage3 tarball, portage snapshot and metadata should be fetched.</td>
+  </tr>
+  <tr>
+   <td><b>Stage 3 tarball</b></td>
+   <td><pre>$STAGE3_TARBALL</pre></td>
+   <td><i></i>
+   <td>Specifies the location of a custom stage3 tarball. When this option is present, fetching will be skipped</td>
+  </tr>
+  <tr>
+   <td><b>Portage source</b></td>
+   <td><pre>$PORTAGE_SOURCE</pre></td>
+   <td><i></i>
+   <td>path to a custom portage to use. Can be one of:
+    <li> a tarball -- will be extracted</li>
+    <li> a directory -- will be bind-mounted read-only</li>
+    <li> "none" -- do not set up a portage tree</li>
+    <li> undefined -- a portage snapshot will be downloaded and extracted into the rootfs</li>
+   </td>
   </tr>
   <tr>
    <td><b>LXC Container Name</b></td>
@@ -78,20 +114,14 @@ Available environment variables are as follows.
   <tr>
    <td><b>Guest Root Password</b></td>
    <td><pre>$GUESTROOTPASS</pre></td>
-   <td><i>toor</i></td>
+   <td><i></i></td>
    <td>Will be phased out soon.</td>
   </tr>
   <tr>
    <td><b>Gentoo Architecture</b></td>
    <td><pre>$ARCH</pre></td>
    <td><i>amd64</i></td>
-   <td>Gentoo architecture code.</td>
-  </tr>
-  <tr>
-   <td><b>Gentoo Subarchitecture</b></td>
-   <td><pre>$SUBARCH</pre></td>
-   <td><i>amd64</i></td>
-   <td>Gentoo subarchitecture code.</td>
+   <td>Gentoo architecture code: alpha, amd64, arm, hppa, ia64, ppc, s390, sh, sparc, x86</td>
   </tr>
   <tr>
    <td><b>Gentoo Architecture Variant</b></td>
@@ -102,14 +132,161 @@ Available environment variables are as follows.
   <tr>
    <td><b>lxc.conf Location</b></td>
    <td><pre>$CONFFILE</pre></td>
-   <td><i>${UTSNAME}.conf</i></td>
-   <td>Path at which to generate the <i>lxc.conf</i> file.</td>
+   <td><i>${NAME}.conf</i></td>
+   <td>Path at which to generate the <i>lxc.conf</i> file, one of:
+    <li> undefined -- config will be placed into ./${NAME}.conf</li>
+    <li> a directory -- config will be placed into dir/${NAME}.conf</li>
+    <li> file path -- config will be placed into it</li>
+   </td>
   </tr>
  </tbody>
 </table>
 
+
+Network Configuration Notes
+---------------------------
+
+LXC guests can have zero or more network interfaces, which can be of various
+types, and each of which may be configured with zero or more addresses. They
+may, regardless of the above, be granted access to zero or more external
+networks, real or virtual.
+
+As is typical of Unix (and Linux networking in particular), this basically 
+means "you can probably achieve anything you set your mind to, but it's not 
+going to be easy".
+
+The `lxc-gentoo` script therefore tries to provide a reasonable default for
+normal use cases, ie. by configuring guests to use one `veth`-type interface
+that can be connected to the outside world via `iptables`.
+
+Basic connectivity can be established with the following host-side commands:
+ - `lxc-start -n guest -f guest.conf`
+ - `ifconfig guest x.x.x.x`
+   (You should now be able to ping the guest. If not, check your `guest.conf`
+    network configuration versus the host-side configuration. Make sure that
+    both addresses are in the same range and differ, for example the host
+    may be `10.10.10.1` and the guest may be `10.10.10.2`)
+
+Once you have established basic connectivity, external network connectivity
+can be established as follows:
+ - `sysctl net.ipv4.ip_forward=1`
+   (Optionally also set this in `/etc/systctl.conf` to persist after reboot)
+ - `iptables -t nat -A POSTROUTING -o outward-interface -j MASQUERADE`
+   (Where `outward-interface` is the name of the interface that carries
+    traffic to/from the host and the internet, or other destination that
+    you wish to allow the guest to connect to. Different distributions have
+    different ways to persist these `iptables` rules, but you can use
+    `iptables-save >some-ruleset` and `iptables-restore <some-ruleset` on
+    any distribution)
+
+Alternatively to a pure `iptables`-based approach, you may consider
+interface bridging. A bridge is like a software-switch interface on the 
+host and requires some configuration, ie:
+ - install the `bridge-utils` package (gentoo: `emerge bridge-utils`)
+ - `brctl addbr br0` (create a bridge (~=software switch backplane))
+ - `brctl setfd br0 0` (set forward delay of zero for optimisation)
+ - `ifconfig br0 172.20.0.1 255.255.255.0` (select an address range)
+ - `brctl addif br0 <guest-interface>` (add guest to bridge)
+
+For further reading, the following resources are recommended:
+ - `lxc.conf` man page, ie. `man 5 lxc.conf`.
+ - `man 8 iptables`
+ - `man 8 brctl`
+ - `man 8 ifconfig`; or the modern alternative `man 8 ip`
+
+The following notes describe LXC-specific network topology design
+considerations:
+ - Guest startup times will be higher if DHCP is used. In addition, DHCP use
+   creates a dependency on a valid guest-external DHCP configuration which
+   can compromise portability or reliability when executing in different
+   environments. As such, if you are planning to use your LXC guests for
+   executing what should be reliable, repeated jobs, consider avoiding DHCP.
+   Basically it is nothing but a potential source of failure (eg. address
+   pool exhaustion, DHCP server configuration expectation differences between
+   multiple guests, etc.) and should be removed if your infrastructure can
+   be configured to facilitate it. (KISS principal)
+ - VLANs have been observed to sometimes come up with unavoidable delays
+   (depending upon various factors such as spanning tree configuration and
+   intermediate hardware/software). For this reason they are perhaps best
+   left for the host system to establish connectivity with and for any LXC
+   guest access to be provided via the host `iptables` configuration. The
+   ideal setup will depend upon your particular use case. KISS.
+ - There have been bugs regarding relative MAC addresses in other LXC 
+   interface types in the past, which initially caused us to move toward 
+   `veth`-style interface configuration. Bear this in mind if moving back!
+
+
+Emulating other architectures with QEMU...
+------------------------------------------
+ - Enable `BINFMT_MISC` support in your kernel.
+
+ - `emerge` *static* `qemu` with the relevant architecture enabled in
+   `QEMU_USER_TARGETS=""`.
+   Hint: Do this in a native container so you don't have left over
+   static binaries on your system :)
+
+ - Use either the `qemu`-provided `/etc/init.d/qemu-binfmt` script to set
+   up the binfmt handlers or something of your own.
+   Note that the ARM handler @ `qemu-binfmt` is broken
+   and you will probably have to replace it with the line found here:
+   https://bugs.gentoo.org/show_bug.cgi?id=407099
+
+ - Copy the staticaly-linked `qemu-$ARCH` executable into the rootfs
+   (do `cat /proc/sys/fs/binfmt_misc/$ARCH` to see where).
+
 Updates
 -------
+
+___February 2015___
+ - Minor update to mirror information parsing to suit new format
+ - Additional notes on loopback setup (see below)
+
+___September 2014___
+ - Cleanup old init system workarounds
+ - Remove hushlogin default
+
+___July 2014___
+ - Hacky FQDN support within `UTSNAME`
+
+___June 2014___
+ - Fix to `wget` argument handling to improve reliability and performance
+   on developing world or other real / half-broken internet connections
+
+___May 2014___
+ - Remove `kmod-static-nodes` from `sysinit` runlevel to avoid `openrc`
+   related error messages during guest startup.
+
+___April 2014___
+ - No longer drop the `sys_boot` capability in containers, as this prevents
+   `shutdown` or `poweroff` command within the container from properly
+   closing the container, resulting in a hung `init` process and failure
+   to recognize the container state on the host side.
+
+___February 2014___
+ - External networking documentation
+ - Discourage intra-guest dynamic network configuration for portability
+ - Add `/etc/rc.conf` line: `rc_provide="net"` to fix service start issues
+
+___January 2014___
+ - Resolve issues downloading stage3 archives
+ - Set a default, unicode-enabled locale to silence ```perl``` whinging
+ - Fallback to local cache when offline
+ - Silence errors for antique OpenRC fixes
+ - Minor fixes for recent OpenRC releases
+ - Working defaults for quiet mode (`lxc-gentoo create -q`)
+ - Minor typo fixes
+
+___June 2013___
+ - Bashisms
+ - Cleaner syntax
+ - Improved error handling
+ - Speedups
+ - Better/improved locking
+ - More full-featured prompting
+ - Portage tree bind mount support
+ - Portage workspace now `tmpfs` mounted
+ - More verbose download
+ - Compress cache at `/var/cache/lxc/gentoo`
 
 ___January 2013___
  - Deployment of whizz-bang screenshot eyecandy.
@@ -142,10 +319,6 @@ ___November 2012___
    portage's ability to chown.
  - Don't create `/etc/init.d/net.eth0` unless DHCP
    is specified.
- - Fix download of amd64 autobuilds.
- - Add lxc-gentoo-simple to create simple network-less
-   hosts from lxc-create. Leaves details to admin and
-   its tool.
 
 ___October 2012___
  - Migrate stage3 URL from `ARCH` to `SUBARCH`
@@ -168,6 +341,61 @@ ___September 2012___
  - `sshd` setup code dropped as out of scope
  - More OpenRC related fixes for faster startup.
  - Various minor updates
+
+
+Troubleshooting
+---------------
+
+If you do not generate your guest on a dedicated
+filesystem and/or block device then you are very
+likely to encounter inode exhaustion on many
+default `extN`-class filesystems. Therefore, do
+create a new device. A good modern solution is
+to use a new ZFS dataset (`man zfs` and/or see
+http://zfsonlinux.org) or an LVM2 logical volume
+(`man lvcreate` and/or see http://sourceware.org/lvm2/).
+
+However, ZFS or LVM2 are not always available. 
+You can achieve a similar, more portable but lower
+performance and storage efficiency result with the
+nearly always available Linux loopback device driver.
+
+First, create a 1024MB (for example) virtual
+block device image file.
+
+```
+ # dd if=/dev/zero of=myguest.image bs=1MiB count=1024
+```
+
+Second, manually request the generation of a 
+loopback device in order to facilitate the initial
+process of filesystem creation.
+
+```
+ # losetup --show -f myguest.image
+ /dev/loop0
+```
+
+Third, create an appropriate filesystem.
+
+```
+ # mkfs -t ext4 /dev/loop0
+```
+
+Finally, detach the device.
+```
+ # losetup --detach /dev/loop0
+```
+
+You can now mount the image in which to store your
+guest as follows:
+```
+ # mkdir /mnt/myguest
+ # mount -o loop myguest.image /mnt/myguest
+ # cd /mnt/myguest
+ # /path/to/lxc-gentoo create
+```
+
 
 History
 -------
