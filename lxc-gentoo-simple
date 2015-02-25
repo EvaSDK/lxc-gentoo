@@ -140,7 +140,7 @@ _download_file() {
 		echo "failed!"
 		exit 1
 	fi
-	echo "complete."
+	echo "done."
 }
 
 # $1: archive filename, $2: absolute path to extract to
@@ -343,7 +343,7 @@ clean() {
 		fi
 
 		echo -n "Purging the download cache..."
-		rm --preserve-root --one-file-system -rf "${CACHE}" && echo "Done." || exit 1
+		rm --preserve-root --one-file-system -rf "${CACHE}" && echo "done." || exit 1
 		exit 0
 	) 200>${LOCK}
 }
