@@ -217,7 +217,7 @@ copy_gentoo() {
 
 	(
 			flock -n -x 200
-			# make a local copy of the minidebian
+			# make a local copy of the minimal system
 			echo -n "Copying rootfs to ${ROOTFS}..."
 			mkdir -p ${ROOTFS} > /dev/null 2>&1
 			rsync -a "${template}"/ "${ROOTFS}"/ || return 1
