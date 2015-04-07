@@ -151,7 +151,7 @@ _download_file() {
 # $1: archive filename, $2: absolute path to extract to
 _extract_file() {
 	echo -n "Extracting $(basename ${1}) archive... "
-	tar -jxf "${CACHE}/${1}" -C "${2}" > /dev/null 2>&1
+	tar -xpf "${CACHE}/${1}" -C "${2}"
 	if [ $? -ne 0 ]; then
 		echo "failed!"
 		exit 1
