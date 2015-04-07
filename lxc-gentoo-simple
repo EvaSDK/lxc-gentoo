@@ -228,17 +228,12 @@ copy_gentoo() {
 	local template
 	template="${CACHE}/${ARCH}_${SUBARCH}_${ARCHVARIANT}_rootfs"
 
-	(
-			flock -n -x 200
-			# make a local copy of the minimal system
-			echo -n "Copying rootfs to ${ROOTFS}..."
-			mkdir -p ${ROOTFS} > /dev/null 2>&1
-			rsync -a "${template}"/ "${ROOTFS}"/ || return 1
-			echo "done."
-			return 0
-	) 200>${LOCK}
-
-	return $?
+	# make a local copy of the minimal system
+	echo -n "Copying rootfs to ${ROOTFS}..."
+	mkdir -p ${ROOTFS}
+	rsync -Ha "${template}"/ "${ROOTFS}"/ || return 1
+	echo "done."
+	return 0
 }
 
 install_gentoo() {
