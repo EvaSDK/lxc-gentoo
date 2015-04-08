@@ -104,27 +104,13 @@ configure_gentoo() {
 	chroot "${ROOTFS}" locale-gen
 	chroot "${ROOTFS}" eselect locale set en_US.utf8
 
-	# configure init
-	# XXX: Add missing -lxc keyword to some services for stable openrc
-	local service
-	for service in dmesg mount-ro ; do
-		sed -e 's/^(\s*keyword .*)$/$1 -lxc/' \
-			-i "${ROOTFS}"/etc/init.d/${service}
-	done
-
 	# adjust default services
 	chroot "${ROOTFS}" rc-update del netmount default
 	# XXX: remove net.lo from boot runlevel (~jan 2013; openrc-0.11.8)
 	chroot "${ROOTFS}" rc-update del net.lo default
-	# XXX: fix boot-time errors on openrc 0.12.4 related to mount permissions
-	# (~jan 2014)
-	chroot "${ROOTFS}" rc-update del bootmisc boot
 	# XXX: fix boot-time errors on openrc 0.12.4 related to lo interface being
 	# already set up by the host system on our behalf (~jan 2014)
 	chroot "${ROOTFS}" rc-update del loopback boot
-	# XXX: fix boot-time errors on openrc 0.12.4 related to kernel modules
-	# (~may 2014)
-	chroot "${ROOTFS}" rc-update del kmod-static-nodes sysinit
 	# force local provision of 'net' (~jan 2013)
 	echo 'rc_provide="net"' >> "${ROOTFS}"/etc/rc.conf
 
