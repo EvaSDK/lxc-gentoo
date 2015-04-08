@@ -258,10 +258,22 @@ install_gentoo() {
 
 copy_configuration() {
 	echo -n "Writing LXC guest configuration... "
-	cat <<- EOF > /etc/lxc/${NAME}/config
+
+	cat <<- EOF >> ${path}/config
 	#
-	# LXC configuration for ${NAME}
+	# Container specific configuration
 	#
+	EOF
+
+	if ! grep -q '^lxc.rootfs' ${path}/config ; then
+		cat <<- EOF >> ${path}/config
+		# root filesystem location
+		lxc.rootfs = $(readlink -f ${ROOTFS})
+
+		EOF
+	fi
+
+	cat <<- EOF >> ${path}/config
 	lxc.arch = ${ARCH}
 	lxc.utsname = ${NAME}
 
@@ -278,9 +290,6 @@ copy_configuration() {
 
 	#lxc.network.ipv4 = 172.16.0.1
 	#lxc.network.ipv4.gateway = 172.16.0.254
-
-	# root filesystem location
-	lxc.rootfs = $(readlink -f ${ROOTFS})
 
 	# mounts that allow us to drop CAP_SYS_ADMIN
 	lxc.mount.entry=proc proc proc nodev,noexec,nosuid 0 0
