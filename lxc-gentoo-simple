@@ -373,9 +373,33 @@ clean() {
 
 usage()
 {
-	cat <<- EOF
-	$1 -h|--help -p|--path=<path> --clean
-	EOF
+    cat <<EOF
+Template specific options can be passed to lxc-create after a '--' like this:
+
+  lxc-create --name=NAME [-lxc-create-options] -- [-template-options]
+
+Usage: $1 -h|--help -p|--path=<PATH> -n|--name=<NAME>
+            [--arch=<ARCH>] [--arch-variant=ARCHVARIANT] [-c|--clean]
+            [--mirror=<MIRROR>] [--skip-portage]
+
+Options:
+  -h, --help       print this help text
+  -c, --clean      only clean up the cache and terminate
+  -n, --name=NAME  container name, used to as an identifier for that container
+  -p, --path=PATH  path to where the container will be created,
+                   [default=/var/lib/lxc]
+      --arch=ARCH  container architecture. Can be one of: alpha, amd64, arm,
+                   hppa, ia64, mips, ppc, s390, sh, sparc or x86
+                   [default=host arch]
+      --arch-variant=ARCHVARIANT
+                   the architecture variation. Usually ARCH, ARCH-hardened or
+                   ARCH-hardened+nomultilib [default=ARCH]
+      --mirror=MIRROR  mirror to use for downloading stage3 and portage tree
+                       snapshot
+      --skip-portage   do not install portage tree in container
+
+EOF
+
 	return 0
 }
 
@@ -390,9 +414,9 @@ while true
 do
 	case "$1" in
 		-h|--help)      usage $0 && exit 0;;
-		-p|--path)      path=$2; shift 2;;
+		-c|--clean)     clean=1; shift 1;;
 		-n|--name)      NAME=$2; shift 2;;
-		-c|--clean)     clean=$2; shift 2;;
+		-p|--path)      path=$2; shift 2;;
 		--arch)         ARCH=$2; shift 2;;
 		--arch-variant) ARCHVARIANT=$2; shift 2;;
 		--subarch)      SUBARCH=$2; shift 2;;
