@@ -134,6 +134,12 @@ configure_gentoo() {
 	chroot "${ROOTFS}" rc-update del termencoding default
 	# XXX: remove net.lo from boot runlevel (~jan 2013; openrc-0.11.8)
 	chroot "${ROOTFS}" rc-update del net.lo default
+	# XXX: fix boot-time errors on openrc 0.12.4 related to mount permissions
+	# (~jan 2014)
+	chroot "${ROOTFS}" rc-update del bootmisc boot
+	# XXX: fix boot-time errors on openrc 0.12.4 related to lo interface being
+	# already set up by the host system on our behalf (~jan 2014)
+	chroot "${ROOTFS}" rc-update del loopback boot
 	# force local provision of 'net' (~jan 2013)
 	echo 'rc_provide="net"' >> "${ROOTFS}"/etc/rc.conf
 
