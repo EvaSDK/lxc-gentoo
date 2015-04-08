@@ -278,9 +278,7 @@ copy_configuration() {
 	#lxc.network.ipv4.gateway = 172.16.0.254
 
 	# mounts that allow us to drop CAP_SYS_ADMIN
-	lxc.mount.entry=proc proc proc nodev,noexec,nosuid 0 0
-	# disabled for security, see http://blog.bofh.it/debian/id_413
-	#lxc.mount.entry=sys sys sysfs defaults 0 0
+	lxc.mount.auto = cgroup:mixed proc:mixed sys:mixed
 	lxc.mount.entry=shm dev/shm tmpfs rw,nosuid,nodev,noexec,relatime 0 0
 	lxc.mount.entry=run run tmpfs rw,nosuid,nodev,relatime,mode=755 0 0
 
