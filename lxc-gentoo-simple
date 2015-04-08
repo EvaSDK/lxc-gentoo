@@ -387,7 +387,7 @@ EOF
 	return 0
 }
 
-options=$(getopt -o hp:n:c -l help,path:,name:,clean,arch:,arch-variant:,mirror:,skip-portage -- "$@")
+options=$(getopt -o hp:n:c -l help,path:,rootfs:,name:,clean,arch:,arch-variant:,mirror:,skip-portage -- "$@")
 if [ $? -ne 0 ]; then
 	usage $(basename $0)
 	exit 1
@@ -401,6 +401,7 @@ do
 		-c|--clean)     clean=1; shift 1;;
 		-n|--name)      NAME=$2; shift 2;;
 		-p|--path)      path=$2; shift 2;;
+		--rootfs)       ROOTFS=$2; shift 2;;
 		--arch)         ARCH=$2; shift 2;;
 		--arch-variant) ARCHVARIANT=$2; shift 2;;
 		--mirror)       MIRROR=$2; shift 2;;
@@ -431,7 +432,15 @@ if [ "$(id -u)" != "0" ]; then
 	exit 1
 fi
 
-ROOTFS="${path}/rootfs"
+# detect rootfs
+config="${path}/config"
+if [ -z "$ROOTFS" ]; then
+    if grep -q '^lxc.rootfs' ${config} 2> /dev/null ; then
+        ROOTFS=$(awk -F= '/^lxc.rootfs =/{ print $2 }' ${config})
+    else
+        ROOTFS="${path}/rootfs"
+    fi
+fi
 
 install_gentoo
 if [ $? -ne 0 ]; then
