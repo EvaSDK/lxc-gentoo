@@ -149,11 +149,11 @@ _download_file() {
 	output_basename="$(basename ${output_file})"
 	output_dirname="$(dirname ${output_file})"
 
-	echo -n "Downloading ${output_basename}, please wait... "
+	echo "Downloading ${output_basename}, please wait... "
 	#  - ensure output directory exists
-	mkdir -p "${output_dirname}" > /dev/null 2>&1
+	mkdir -p "${output_dirname}"
 	#  - grab
-	${WGET} -O "${output_file}" "${1}" > /dev/null 2>&1
+	${WGET} -O "${output_file}" "${1}"
 	if [ $? -ne 0 ]; then
 		echo "failed!"
 		exit 1
