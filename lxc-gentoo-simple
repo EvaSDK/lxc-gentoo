@@ -50,6 +50,7 @@ else
 fi
 MIRROR="${MIRROR:-http://distfiles.gentoo.org}"
 SKIP_PORTAGE="no"
+NAME="gentoo.local"
 
 
 configure_gentoo() {
@@ -101,9 +102,11 @@ configure_gentoo() {
 	chroot "${ROOTFS}" rc-update add net.eth0 default
 
 	# set hostname
-	cat <<- EOF > "${ROOTFS}"/etc/conf.d/hostname
-	HOSTNAME="${NAME}"
-	EOF
+	sed -e "s/\(hostname=\)\".*\"/\1\"${NAME}\"/" \
+		-i "${ROOTFS}"/etc/conf.d/hostname
+	sed -e "/127.0.0.1[ \t]\+localhost/ s/\(localhost\)/${NAME} ${NAME%%.*} \1/" \
+		-e "/::1[ \t]\+localhost/ s/\(localhost\)/${NAME} ${NAME%%.*} \1/" \
+		-i "${ROOTFS}"/etc/hosts
 
 	# set locale
 	cat <<- EOF > "${ROOTFS}"/etc/locale.gen
@@ -287,7 +290,7 @@ copy_configuration() {
 	lxc.network.type = veth
 	lxc.network.flags = up
 	# - name in host (max 15 chars; defaults to 'tun'+random)
-	lxc.network.veth.pair = ${NAME}
+	lxc.network.veth.pair = ${NAME%%.*}
 	# - name in guest
 	lxc.network.name = eth0
 	# enable for bridging
@@ -386,7 +389,8 @@ Usage: $1 -h|--help -p|--path=<PATH> -n|--name=<NAME>
 Options:
   -h, --help       print this help text
   -c, --clean      only clean up the cache and terminate
-  -n, --name=NAME  container name, used to as an identifier for that container
+  -n, --name=NAME  container name, used to as an identifier for that container,
+                   supports FQDN [default=gentoo.local]
   -p, --path=PATH  path to where the container will be created,
                    [default=/var/lib/lxc]
       --arch=ARCH  container architecture. Can be one of: alpha, amd64, arm,
