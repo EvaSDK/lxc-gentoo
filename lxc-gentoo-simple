@@ -107,7 +107,7 @@ configure_gentoo() {
 	# configure init
 	# XXX: Add missing -lxc keyword to some services for stable openrc
 	local service
-	for service in dmesg mount-ro sysctl ; do
+	for service in dmesg mount-ro ; do
 		sed -e 's/^(\s*keyword .*)$/$1 -lxc/' \
 			-i "${ROOTFS}"/etc/init.d/${service}
 	done
