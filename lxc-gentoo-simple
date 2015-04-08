@@ -75,7 +75,6 @@ configure_gentoo() {
 	cat <<- EOF > "${ROOTFS}"/etc/fstab
 	# required to prevent boot-time error display
 	none   /          none   defaults  0 0
-	tmpfs  /dev/shm   tmpfs  defaults  0 0
 	EOF
 
 	# set default localzone
@@ -279,7 +278,6 @@ copy_configuration() {
 
 	# mounts that allow us to drop CAP_SYS_ADMIN
 	lxc.mount.auto = cgroup:mixed proc:mixed sys:mixed
-	lxc.mount.entry=shm dev/shm tmpfs rw,nosuid,nodev,noexec,relatime 0 0
 	lxc.mount.entry=run run tmpfs rw,nosuid,nodev,relatime,mode=755 0 0
 
 	# console access
