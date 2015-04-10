@@ -244,17 +244,17 @@ install_gentoo() {
 copy_configuration() {
 	echo -n "Writing LXC guest configuration... "
 
-	cat <<- EOF >> ${path}/config
-	#
-	# Container specific configuration
-	#
-	EOF
-
 	if ! grep -q '^lxc.rootfs' ${path}/config ; then
 		cat <<- EOF >> ${path}/config
 		# root filesystem location
 		lxc.rootfs = $(readlink -f ${ROOTFS})
+		EOF
+	fi
 
+	if [ -e "/usr/share/lxc/config/gentoo.common.conf" ]; then
+		cat <<- EOF >> ${path}/config
+		# Include common configuration
+		lxc.include = /usr/share/lxc/config/gentoo.common.conf
 		EOF
 	fi
 
@@ -276,10 +276,6 @@ copy_configuration() {
 	#lxc.network.ipv4 = 172.16.0.1
 	#lxc.network.ipv4.gateway = 172.16.0.254
 
-	# mounts that allow us to drop CAP_SYS_ADMIN
-	lxc.mount.auto = cgroup:mixed proc:mixed sys:mixed
-	lxc.mount.entry=run run tmpfs rw,nosuid,nodev,relatime,mode=755 0 0
-
 	# console access
 	lxc.tty = 1
 	lxc.pts = 128
@@ -296,31 +292,6 @@ copy_configuration() {
 	# net_bind_service net_broadcast net_raw setgid setuid sys_chroot sys_boot
 	# aggressive settings:
 	lxc.cap.drop = audit_control audit_write dac_read_search fsetid ipc_owner linux_immutable mac_admin mac_override mknod setfcap sys_module sys_pacct sys_ptrace sys_rawio sys_resource sys_time sys_tty_config syslog
-
-	# deny access to all devices by default, explicitly grant some permissions
-	#
-	#  format is [c|b] [major|*]:[minor|*] [r][w][m]
-	#             ^     ^                   ^
-	# char/block -'     \`- device number    \`-- read, write, mknod
-	#
-	# first deny all...
-	lxc.cgroup.devices.deny = a
-	# /dev/null and zero
-	lxc.cgroup.devices.allow = c 1:3 rw
-	lxc.cgroup.devices.allow = c 1:5 rw
-	# /dev/{,u}random
-	lxc.cgroup.devices.allow = c 1:9 rw
-	lxc.cgroup.devices.allow = c 1:8 r
-	# /dev/pts/*
-	lxc.cgroup.devices.allow = c 136:* rw
-	lxc.cgroup.devices.allow = c 5:2 rw
-	# /dev/tty{1,2}
-	lxc.cgroup.devices.allow = c 4:1 rwm
-	lxc.cgroup.devices.allow = c 4:0 rwm
-	lxc.cgroup.devices.allow = c 5:0 rwm
-	lxc.cgroup.devices.allow = c 5:1 rwm
-	# /dev/net/tun
-	lxc.cgroup.devices.allow = c 10:200 rwm
 
 	EOF
 	echo "done."
