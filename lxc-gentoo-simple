@@ -266,7 +266,7 @@ copy_configuration() {
 	lxc.network.type = veth
 	lxc.network.flags = up
 	# - name in host (max 15 chars; defaults to 'tun'+random)
-	lxc.network.veth.pair = ${NAME%%.*}
+	lxc.network.veth.pair = v-${NAME%%.*}-e0
 	# - name in guest
 	lxc.network.name = eth0
 	# enable for bridging
